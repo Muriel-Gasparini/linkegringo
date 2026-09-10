@@ -180,7 +180,7 @@ export async function probeViaWebSocket(
 export async function checkChromeCdp(
   port = 9222,
   host = '127.0.0.1',
-  timeoutMs = 2000
+  timeoutMs = 5000
 ): Promise<CdpStatus> {
   // 1. Tenta via DevToolsActivePort nativo (CDP WebSocket direto)
   const activePortData = findDevToolsActivePort();

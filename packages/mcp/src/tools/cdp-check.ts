@@ -12,7 +12,7 @@ export const checkChromeCdpInputSchema = z.object({
     .describe('Host do Chrome (padrão 127.0.0.1)'),
   timeoutMs: z
     .number()
-    .default(2000)
+    .default(5000)
     .describe('Tempo limite em milissegundos para a conexão'),
 });
 
