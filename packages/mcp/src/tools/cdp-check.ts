@@ -21,30 +21,58 @@ export type CheckChromeCdpInput = z.infer<typeof checkChromeCdpInputSchema>;
 export async function handleCheckChromeCdp(input: CheckChromeCdpInput) {
   const status = await checkChromeCdp(input.port, input.host, input.timeoutMs);
 
-  const markdownSummary = `
-# Status do Chrome Remote Debugging (CDP)
+  const session = status.sessionState;
+  const isProfileLoaded = Boolean(session?.hasUploadedProfile);
 
-**Porta Testada**: ${status.host}:${status.port}
-**Status da Conexão**: ${status.isRunning ? '🟢 Conectado e Ativo' : '🔴 Desconectado'}
+  let sessionSection = '';
+  if (status.linkeGringoTabFound) {
+    if (isProfileLoaded) {
+      sessionSection = `
+### 👤 Sessão do LinkeGringo: 🟢 Perfil Carregado
+- **Candidato**: ${session?.candidateName || 'Identificado'}
+- **Cargo Alvo**: ${session?.targetRole || 'Não especificado'}
+- **Passo Atual**: \`${session?.step || 'diagnostic'}\`
+- **Inbound Score**: ${session?.inboundScore !== undefined ? `${session.inboundScore}/100` : 'Pronto para cálculo'}
+
+> 💡 **Instrução para a IA**: O perfil do usuário já está carregado. Você pode utilizar diretamente as ferramentas \`audit_profile\`, \`simulate_recruiter_search\`, \`generate_headline_proposals\` e \`convert_to_xyz_bullet\` com os dados do candidato.
+`;
+    } else {
+      sessionSection = `
+### 👤 Sessão do LinkeGringo: 🟡 Aguardando Upload do PDF
+- **Passo Atual**: \`upload\` (Tela inicial)
+- **Status do Arquivo**: Nenhum PDF do LinkedIn foi carregado ainda pelo usuário.
+
+> 💡 **Instrução para a IA**: O usuário está com o LinkeGringo aberto, mas ainda não subiu o PDF. **Peça educadamente para o usuário arrastar ou selecionar o PDF do seu perfil do LinkedIn no dropzone da aplicação web** (${status.linkeGringoTabUrl || 'http://localhost:5173'}). Assim que o usuário subir o PDF, você terá acesso instantâneo aos dados para auditar e otimizar!
+`;
+    }
+  } else {
+    sessionSection = `
+### 🌐 Sessão do LinkeGringo: ⚠️ Não Detectada
+> O LinkeGringo não foi detectado em nenhuma aba aberta. Peça ao usuário para abrir \`http://localhost:5173\` no navegador ou fornecer o texto do perfil diretamente.
+`;
+  }
+
+  const markdownSummary = `
+# Status do Chrome Remote Debugging (CDP) & LinkeGringo
+
+**Porta CDP**: ${status.host}:${status.port}
+**Status do Chrome**: ${status.isRunning ? '🟢 Conectado e Ativo' : '🔴 Desconectado'}
 
 ${
   status.isRunning
     ? `
-- **Versão do Navegador**: ${status.browser || 'Desconhecido'}
-- **Versão do Protocolo DevTools**: ${status.protocolVersion || '1.3'}
-- **Total de Abas Abertas**: ${status.activeTabs.length}
+- **Versão do Navegador**: ${status.browser || 'Google Chrome'}
 - **Aba do LinkeGringo**: ${
         status.linkeGringoTabFound
-          ? `✓ Detectada (${status.linkeGringoTabUrl})`
-          : '⚠️ Nenhuma aba do LinkeGringo aberta no momento'
+          ? `✓ Detectada (\`${status.linkeGringoTabUrl}\`)`
+          : '⚠️ Nenhuma aba do LinkeGringo aberta'
       }
 
-${
-  status.activeTabs.length > 0
-    ? `### Abas Encontradas:
-${status.activeTabs.map((t) => `- [${t.title}](${t.url})`).join('\n')}`
-    : ''
-}
+### 🛡️ Privacy Shield Ativo
+- **Abas Pessoais Protegidas**: ${status.otherTabsCount} aba(s) abertas no navegador foram preservadas sem inspeção (e-mails, mensageiros, documentos).
+- **Escopo Restrito**: O LinkeGringo acessa exclusivamente abas pertencentes à própria aplicação LinkeGringo.
+
+${sessionSection}
 `
     : `
 > ❌ **Motivo**: ${status.error || 'Porta fechada.'}

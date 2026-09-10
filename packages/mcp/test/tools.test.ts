@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as probeModule from '../src/cdp/probe.js';
 import { handleAuditProfile } from '../src/tools/audit-profile.js';
 import { handleSimulateRecruiterSearch } from '../src/tools/recruiter-simulator.js';
 import { handleConvertToXyzBullet, formatGoogleXyzBullet } from '../src/tools/xyz-bullet-converter.js';
 import { handleGenerateHeadline } from '../src/tools/headline-generator.js';
+import { handleCheckChromeCdp } from '../src/tools/cdp-check.js';
 import { createLinkeGringoMcpServer } from '../src/server.js';
 
 describe('LinkeGringo MCP Tools Suite', () => {
@@ -51,6 +53,69 @@ describe('LinkeGringo MCP Tools Suite', () => {
       expect(result.structuredData.sparseExperiences.length).toBe(1);
       expect(result.structuredData.triageBottlenecks.length).toBeGreaterThan(0);
       expect(result.structuredData.score).toBeLessThan(100);
+    });
+
+    it('returns actionable waiting_for_upload when called without profile and LinkeGringo is open', async () => {
+      vi.spyOn(probeModule, 'checkChromeCdp').mockResolvedValueOnce({
+        isRunning: true,
+        port: 9222,
+        host: '127.0.0.1',
+        linkeGringoTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        activeTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        otherTabsCount: 15,
+        linkeGringoTabFound: true,
+        linkeGringoTabUrl: 'http://localhost:5173/',
+        sessionState: {
+          hasUploadedProfile: false,
+          step: 'upload',
+        },
+      });
+
+      const result = await handleAuditProfile({});
+      expect(result.structuredData.status).toBe('waiting_for_upload');
+      expect(result.structuredData.actionRequired).toBe('upload_pdf');
+      expect(result.content[0].text).toContain('Nenhum Perfil Carregado no LinkeGringo');
+      expect(result.content[0].text).toContain('arraste o PDF do seu perfil do LinkedIn');
+    });
+
+    it('automatically uses uploaded profile from browser session when available', async () => {
+      vi.spyOn(probeModule, 'checkChromeCdp').mockResolvedValueOnce({
+        isRunning: true,
+        port: 9222,
+        host: '127.0.0.1',
+        linkeGringoTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        activeTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        otherTabsCount: 15,
+        linkeGringoTabFound: true,
+        linkeGringoTabUrl: 'http://localhost:5173/',
+        sessionState: {
+          hasUploadedProfile: true,
+          candidateName: 'Maria Dev',
+          targetRole: 'Senior Cloud Engineer',
+          step: 'diagnostic',
+          inboundScore: 78,
+          profile: {
+            name: 'Maria Dev',
+            headline: 'Senior Cloud Engineer | AWS • Kubernetes • Terraform',
+            summary: 'Experienced cloud engineer specialized in platform scalability.',
+            skills: ['AWS', 'Kubernetes', 'Terraform', 'Go'],
+            experiences: [
+              {
+                companyName: 'CloudScale Inc',
+                title: 'Staff Platform Engineer',
+                bullets: [
+                  'Accomplished 99.99% uptime, measured by reducing downtime incidents by 50%, by automating multi-region failover.',
+                ],
+              },
+            ],
+          },
+        },
+      });
+
+      const result = await handleAuditProfile({});
+      expect(result.content[0].text).toContain('Relatório de Diagnóstico Inbound');
+      expect(result.structuredData.score).toBeGreaterThan(50);
+      expect(result.structuredData.headline).toContain('Senior Cloud Engineer');
     });
   });
 
@@ -115,6 +180,61 @@ describe('LinkeGringo MCP Tools Suite', () => {
         expect(proposal.headline.length).toBeLessThanOrEqual(160);
         expect(proposal.headline).toContain('Staff Distributed Systems Engineer');
       }
+    });
+  });
+
+  describe('check_chrome_cdp_status', () => {
+    it('formats summary with Privacy Shield and guides user when upload is pending', async () => {
+      vi.spyOn(probeModule, 'checkChromeCdp').mockResolvedValueOnce({
+        isRunning: true,
+        port: 9222,
+        host: '127.0.0.1',
+        browser: 'Chrome/144.0.0.0',
+        protocolVersion: '1.3',
+        linkeGringoTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        activeTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        otherTabsCount: 18,
+        linkeGringoTabFound: true,
+        linkeGringoTabUrl: 'http://localhost:5173/',
+        sessionState: {
+          hasUploadedProfile: false,
+          step: 'upload',
+        },
+      });
+
+      const result = await handleCheckChromeCdp({ port: 9222, host: '127.0.0.1', timeoutMs: 1000 });
+      expect(result.content[0].text).toContain('Privacy Shield Ativo');
+      expect(result.content[0].text).toContain('18 aba(s) abertas no navegador foram preservadas');
+      expect(result.content[0].text).toContain('Aguardando Upload do PDF');
+      expect(result.content[0].text).toContain('arrastar ou selecionar o PDF');
+    });
+
+    it('displays loaded candidate info when session has an uploaded profile', async () => {
+      vi.spyOn(probeModule, 'checkChromeCdp').mockResolvedValueOnce({
+        isRunning: true,
+        port: 9222,
+        host: '127.0.0.1',
+        browser: 'Chrome/144.0.0.0',
+        protocolVersion: '1.3',
+        linkeGringoTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        activeTabs: [{ id: 'tab-1', title: 'LinkeGringo', url: 'http://localhost:5173/' }],
+        otherTabsCount: 10,
+        linkeGringoTabFound: true,
+        linkeGringoTabUrl: 'http://localhost:5173/',
+        sessionState: {
+          hasUploadedProfile: true,
+          candidateName: 'Carlos Silva',
+          targetRole: 'Senior SRE / DevOps',
+          step: 'diagnostic',
+          inboundScore: 82,
+        },
+      });
+
+      const result = await handleCheckChromeCdp({ port: 9222, host: '127.0.0.1', timeoutMs: 1000 });
+      expect(result.content[0].text).toContain('Perfil Carregado');
+      expect(result.content[0].text).toContain('Carlos Silva');
+      expect(result.content[0].text).toContain('Senior SRE / DevOps');
+      expect(result.content[0].text).toContain('82/100');
     });
   });
 });

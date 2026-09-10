@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Experience } from '@linkegringo/core';
+import { checkChromeCdp } from '../cdp/probe.js';
 
 export interface SparseExperience {
   company: string;
@@ -94,7 +95,80 @@ export async function handleAuditProfile(input: AuditProfileInput) {
   let headline = input.headline || '';
   let summary = input.summary || '';
   let skills = input.skills || [];
-  const rawExperiences = input.experiences || [];
+  const rawExperiences = [...(input.experiences || [])];
+
+  // Se nenhum dado foi fornecido, tenta buscar sessão ativa do LinkeGringo no Chrome
+  if (!headline && !input.profileText && rawExperiences.length === 0) {
+    try {
+      const cdp = await checkChromeCdp();
+      if (cdp.sessionState?.hasUploadedProfile && cdp.sessionState.profile) {
+        const p = cdp.sessionState.profile;
+        headline = p.headline || '';
+        summary = p.summary || '';
+        skills = p.skills || [];
+        if (Array.isArray(p.experiences)) {
+          for (const exp of p.experiences) {
+            rawExperiences.push({
+              company: exp.companyName || exp.company || 'Company',
+              title: exp.title || 'Engineer',
+              bullets: exp.bullets,
+              description: exp.description,
+            });
+          }
+        }
+      } else if (cdp.linkeGringoTabFound) {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `
+# ⚠️ Nenhum Perfil Carregado no LinkeGringo
+
+A aplicação **LinkeGringo está aberta no seu navegador** (\`${cdp.linkeGringoTabUrl || 'http://localhost:5173'}\`), mas o **upload do PDF do LinkedIn ainda não foi realizado**.
+
+---
+
+### 💡 Próximo Passo
+Por favor, acesse a aba do LinkeGringo no seu navegador e **arraste o PDF do seu perfil do LinkedIn para o dropzone** (ou clique para selecionar o arquivo).
+
+Assim que o upload for processado pela aplicação web, chame o \`audit_profile\` novamente para auditar o perfil real automaticamente!
+`.trim(),
+            },
+          ],
+          structuredData: {
+            status: 'waiting_for_upload',
+            linkeGringoTabUrl: cdp.linkeGringoTabUrl,
+            message: 'O usuário ainda não subiu o PDF do LinkedIn na aplicação web.',
+            actionRequired: 'upload_pdf',
+          },
+        };
+      } else {
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `
+# ⚠️ Nenhum Perfil Fornecido para Auditoria
+
+Nenhum dado de perfil foi informado e a aplicação LinkeGringo não foi detectada no navegador.
+
+### Como prosseguir:
+1. **Pela Web**: Abra o LinkeGringo em \`http://localhost:5173\` no Google Chrome e faça o upload do PDF do seu LinkedIn; OU
+2. **Via Parâmetros**: Forneça o texto bruto do perfil no parâmetro \`profileText\` ou informe \`headline\`, \`experiences\` e \`skills\`.
+`.trim(),
+            },
+          ],
+          structuredData: {
+            status: 'missing_profile',
+            message: 'Nenhum perfil fornecido e aplicação LinkeGringo não detectada no navegador.',
+            actionRequired: 'provide_input_or_open_web',
+          },
+        };
+      }
+    } catch {
+      // Continua se falhar o CDP
+    }
+  }
 
   // Se apenas profileText foi fornecido, extrai os blocos básicos heurísticos
   if (input.profileText && !headline && rawExperiences.length === 0) {

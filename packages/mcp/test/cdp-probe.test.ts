@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { checkChromeCdp } from '../src/cdp/probe.js';
 
@@ -52,16 +53,23 @@ describe('Chrome DevTools CDP Probe', () => {
       return { ok: false, status: 404 };
     }) as any;
 
+    const originalExistsSync = fs.existsSync;
+    vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+
     try {
       const result = await checkChromeCdp(9222, '127.0.0.1', 1000);
       expect(result.isRunning).toBe(true);
       expect(result.browser).toBe('Chrome/144.0.0.0');
       expect(result.protocolVersion).toBe('1.3');
-      expect(result.activeTabs).toHaveLength(2);
+      // 🛡️ Privacy Shield: Apenas a aba do LinkeGringo é mantida em activeTabs
+      expect(result.activeTabs).toHaveLength(1);
+      expect(result.activeTabs[0].url).toContain('localhost:5173');
+      expect(result.otherTabsCount).toBe(1);
       expect(result.linkeGringoTabFound).toBe(true);
       expect(result.linkeGringoTabUrl).toContain('localhost:5173');
     } finally {
       globalThis.fetch = originalFetch;
+      vi.restoreAllMocks();
     }
   });
 });

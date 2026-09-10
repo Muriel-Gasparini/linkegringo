@@ -6,6 +6,11 @@ export { createLinkeGringoMcpServer } from './server.js';
 export * from './cdp/probe.js';
 export * from './cdp/types.js';
 export * from './cli/installer.js';
+export * from './tools/audit-profile.js';
+export * from './tools/recruiter-simulator.js';
+export * from './tools/xyz-bullet-converter.js';
+export * from './tools/headline-generator.js';
+export * from './tools/cdp-check.js';
 
 async function main() {
   if (

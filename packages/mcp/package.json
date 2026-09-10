@@ -1,6 +1,6 @@
 {
   "name": "@linkegringo/mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Servidor MCP oficial do LinkeGringo para auditoria e otimização de perfis para o mercado internacional",
   "type": "module",
   "bin": {
