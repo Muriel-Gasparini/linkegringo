@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ApiKeyDialog } from './components/ApiKeyDialog';
+import { McpHubModal } from './components/McpHubModal';
 import { FileUploadDropzone, type FileUploadData } from './components/FileUploadDropzone';
 import { DiagnosticView } from './components/DiagnosticView';
 import { InterviewView } from './components/InterviewView';
@@ -85,6 +86,7 @@ export function App() {
   // Modals
   const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [mcpHubOpen, setMcpHubOpen] = useState(false);
 
   // Active AI Provider instance retention across turns and re-renders
   const providerRef = React.useRef<AiProvider | null>(null);
@@ -627,6 +629,10 @@ export function App() {
         model={model}
         onOpenApiKeyDialog={() => setApiKeyDialogOpen(true)}
         onOpenOnboarding={() => setOnboardingOpen(true)}
+        onOpenMcpHub={() => {
+          setMcpHubOpen(true);
+          track('mcp_modal_opened');
+        }}
         onToggleDemoMode={handleToggleDemoMode}
         onResetSession={handleResetSession}
         hasActiveSession={hasActiveSession}
@@ -720,6 +726,11 @@ export function App() {
         model={model}
         onSave={handleSaveApiKey}
         onClear={handleClearApiKey}
+      />
+
+      <McpHubModal
+        isOpen={mcpHubOpen}
+        onClose={() => setMcpHubOpen(false)}
       />
     </div>
   );

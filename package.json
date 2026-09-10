@@ -11,7 +11,8 @@
     "dev": "pnpm --filter @linkegringo/web dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "release:mcp": "./scripts/publish-mcp.sh"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

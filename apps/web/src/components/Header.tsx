@@ -1,5 +1,5 @@
 import React from 'react';
-import { Key, HelpCircle, RefreshCw } from 'lucide-react';
+import { Key, HelpCircle, RefreshCw, Terminal } from 'lucide-react';
 import { Button } from './ui/button';
 
 function GithubIcon({ className }: { className?: string }) {
@@ -20,6 +20,7 @@ interface HeaderProps {
   model?: string;
   onOpenApiKeyDialog: () => void;
   onOpenOnboarding: () => void;
+  onOpenMcpHub: () => void;
   onToggleDemoMode: () => void;
   onResetSession: () => void;
   hasActiveSession: boolean;
@@ -31,6 +32,7 @@ export function Header({
   model,
   onOpenApiKeyDialog,
   onOpenOnboarding,
+  onOpenMcpHub,
   onToggleDemoMode,
   onResetSession,
   hasActiveSession,
@@ -107,6 +109,17 @@ export function Header({
                 <span>Chave de API</span>
               </Button>
             )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenMcpHub}
+              className="text-xs text-cyan-300 hover:text-white border-cyan-500/30 bg-cyan-950/20 hover:bg-cyan-900/30 h-8 px-2.5 gap-1.5 font-medium"
+              title="Integrar com Agentes de IA via Model Context Protocol"
+            >
+              <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Agentes / MCP</span>
+            </Button>
 
             <Button
               variant="ghost"

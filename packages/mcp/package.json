@@ -1,0 +1,36 @@
+{
+  "name": "@linkegringo/mcp",
+  "version": "1.0.5",
+  "description": "Servidor MCP oficial do LinkeGringo para auditoria e otimização de perfis para o mercado internacional",
+  "type": "module",
+  "bin": {
+    "linkegringo": "dist/index.js",
+    "linkegringo-mcp": "dist/index.js",
+    "mcp": "dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@linkegringo/core": "workspace:*",
+    "@types/node": "^22.10.2",
+    "tsup": "^8.3.6",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

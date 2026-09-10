@@ -103,11 +103,29 @@ Acesse `http://localhost:5173` no navegador.
 linkegringo/
 ├── packages/
 │   ├── core/       # @linkegringo/core — Dominio, Schemas Zod, tipos e formulas deterministicas
-│   └── ai/         # @linkegringo/ai   — Provedor Gemini (@google/genai), Mock offline e prompts
+│   ├── ai/         # @linkegringo/ai   — Provedor Gemini (@google/genai), Mock offline e prompts
+│   └── mcp/        # @linkegringo/mcp  — Servidor MCP oficial (stdio) & Chrome DevTools Hub
 ├── apps/
 │   └── web/        # @linkegringo/web  — SPA React 19 + Vite + Tailwind CSS v4
 ├── .github/        # Workflows CI/CD (Deploy GitHub Pages e CI de Pull Requests)
 └── docs...
+```
+
+---
+
+## Model Context Protocol (MCP)
+
+O LinkeGringo possui um servidor MCP oficial publicado no registro público do NPM ([`@linkegringo/mcp`](https://www.npmjs.com/package/@linkegringo/mcp)). Ele opera **100% autônomo** (sem necessidade de clonar o repositório ou de API Keys externas) fornecendo ferramentas determinísticas para agentes de IA locais:
+
+```bash
+# Instalador universal automático (Google Antigravity, Claude Desktop, Cursor AI):
+npx -y @linkegringo/mcp install
+
+# Comandos One-Line diretos para agentes de terminal (CLI):
+agy mcp add linkegringo npx -y @linkegringo/mcp
+codex mcp add linkegringo -- npx -y @linkegringo/mcp
+claude mcp add linkegringo npx -y @linkegringo/mcp
+goose configure --add-extension "npx -y @linkegringo/mcp"
 ```
 
 ---
@@ -126,6 +144,9 @@ pnpm typecheck
 
 # Executar testes automatizados
 pnpm test
+
+# Publicar nova versão do @linkegringo/mcp no NPM
+pnpm release:mcp [patch|minor|major]
 ```
 
 ---

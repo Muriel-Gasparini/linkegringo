@@ -101,6 +101,10 @@ export interface TelemetryEventMap {
   launch_completed: { totalItems?: number } | undefined;
   checklist_toggled: { itemIndex: number; checked: boolean; itemKey?: string; totalCompleted?: number };
 
+  // MCP & AI Agents Hub
+  mcp_modal_opened: { clientTab?: string; cliTab?: string } | undefined;
+  mcp_connection_tested: { isRunning: boolean; port: number } | undefined;
+
   // System Health / API Telemetry
   api_error: {
     stage: 'diagnose' | 'interview' | 'rewrite' | 'connection';
